@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CertiChain — Issue credentials</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Inter:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="shared.css" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "on-surface-variant": "#534439",
+        "surface-container-low": "#f6f3f2",
+        "surface-container-lowest": "#ffffff",
+        ink: "#0F0F0F",
+        paper: "#FAFAF8",
+        seal: "#C17A3A",
+        mist: "#E8E6E1"
+      },
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+        serif: ["Instrument Serif", "serif"],
+        mono: ["Geist Mono", "monospace"]
+      }
+    }
+  }
+};
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+  body { background-color: #FAFAF8; }
+</style>
+</head>
+<body class="font-sans text-ink selection:bg-seal/20">
+<header class="relative fixed left-0 right-0 top-0 z-50 flex min-h-[72px] w-full items-center border-b border-mist/50 bg-[#FAFAF8]/75 px-6 backdrop-blur-[12px] md:px-8 dark:border-white/10 dark:bg-[#0F0F0F]/80">
+<div class="flex min-w-0 flex-1 items-center gap-3">
+<button type="button" class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-[6px] border border-mist/80 text-ink transition-colors hover:bg-surface-container-low icon-btn dark:border-white/20 dark:text-[#FAFAF8]" data-mobile-nav-toggle="" aria-controls="uni-issue-nav-drawer" aria-expanded="false" aria-label="Open menu">
+<span class="material-symbols-outlined text-[22px]">menu</span>
+</button>
+<a class="nav-link shrink-0 font-serif text-2xl italic text-ink dark:text-[#FAFAF8]" href="index.html">CertiChain</a>
+</div>
+<nav class="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 md:block" aria-label="Primary">
+<ul class="flex items-center gap-10 font-serif text-lg tracking-tight text-ink lg:gap-12 dark:text-[#FAFAF8]">
+<li><a class="nav-link border-b-2 border-seal pb-1 font-medium text-seal" href="university.html" aria-current="page">Universities</a></li>
+<li><a class="nav-link opacity-70 hover:text-seal" href="student.html">Students</a></li>
+<li><a class="nav-link opacity-70 hover:text-seal" href="employer.html">Verify</a></li>
+</ul>
+</nav>
+<div class="flex min-w-0 flex-1 justify-end">
+<button type="button" class="hidden rounded-[6px] border border-mist px-5 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper sm:inline-flex btn-secondary icon-btn dark:border-white/20 dark:text-[#FAFAF8]" data-ripple="">Connect Wallet</button>
+</div>
+</header>
+<nav id="uni-issue-nav-drawer" class="mobile-drawer fixed left-0 right-0 top-[72px] z-40 flex flex-col gap-4 border-b border-mist/50 bg-paper/95 px-6 py-6 shadow-[0_1px_3px_rgba(15,15,15,0.06)] backdrop-blur-[12px] md:hidden" data-mobile-drawer="" data-open="false" aria-label="Site">
+<a class="border-b border-mist/40 py-2 font-serif text-lg text-seal" href="university.html">Universities</a>
+<a class="border-b border-mist/40 py-2 font-serif text-lg" href="student.html">Students</a>
+<a class="border-b border-mist/40 py-2 font-serif text-lg" href="employer.html">Verify</a>
+<a class="py-2 font-serif text-lg text-ink/60" href="index.html">Home</a>
+<p class="pt-2 font-sans text-[11px] uppercase tracking-[0.08em] text-ink/40">Registrar</p>
+<a class="border-b border-mist/30 py-2 text-sm text-ink/80" href="university.html">Dashboard</a>
+<a class="border-b border-mist/30 py-2 text-sm font-medium text-seal" href="university-issue.html">Issue credentials</a>
+<a class="py-2 text-sm text-ink/80" href="university-revoke.html">Revoke</a>
+<button type="button" class="mt-2 w-full rounded-[6px] border border-mist py-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink hover:bg-surface-container-low icon-btn dark:border-white/20" data-ripple="">Connect Wallet</button>
+</nav>
+
+<main class="mx-auto max-w-[720px] px-6 pb-20 pt-28 md:px-8">
+<nav class="mb-10 flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-mist/50 pb-6 font-serif text-[15px] tracking-tight md:gap-x-12" aria-label="Registrar workspace">
+<a class="nav-link text-ink/55 transition-colors hover:text-ink" href="university.html">Dashboard</a>
+<a class="nav-link border-b-2 border-seal pb-1 font-medium text-seal" href="university-issue.html" aria-current="page">Issue</a>
+<a class="nav-link text-ink/55 transition-colors hover:text-ink" href="university-revoke.html">Revoke</a>
+</nav>
+
+<header class="mb-10">
+<p class="mb-2 font-sans text-[11px] uppercase tracking-[0.08em] text-ink/50">Bulk issuance</p>
+<h1 class="font-serif text-[40px] leading-[1.1] tracking-tight text-ink">Issue credentials</h1>
+<p class="mt-4 max-w-lg text-[15px] leading-relaxed text-on-surface-variant">Upload a UTF-8 CSV of graduates. Each row is hashed and queued for dual-signature before anchoring.</p>
+</header>
+
+<label class="mb-2 block font-sans text-[11px] uppercase tracking-[0.08em] text-on-surface-variant">Graduate file</label>
+<div class="group mb-8 flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[6px] border border-dashed border-mist/80 bg-surface-container-low px-6 py-12 text-center transition-colors hover:border-seal/60 hover:bg-surface-container-lowest">
+<span class="material-symbols-outlined mb-4 text-4xl text-ink/25 transition-colors group-hover:text-seal" aria-hidden="true">upload_file</span>
+<p class="text-[15px] text-ink/75">Drop CSV here</p>
+<p class="mt-2 font-sans text-[11px] uppercase tracking-[0.08em] text-ink/40">or click to browse</p>
+</div>
+
+<div class="mb-10 flex flex-wrap items-center justify-between gap-4 border-t border-mist/40 pt-6">
+<span class="font-sans text-[12px] text-ink/55">Last sync · 2h ago</span>
+<a class="nav-link font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-seal" href="university-template.html">Download template</a>
+</div>
+
+<div class="flex flex-col gap-4 sm:flex-row">
+<button type="button" class="btn-primary inline-flex flex-1 items-center justify-center rounded-[6px] bg-ink py-3 text-[11px] font-medium uppercase tracking-[0.08em] text-paper shadow-[0_1px_3px_rgba(15,15,15,0.06)] transition-colors hover:bg-seal" data-ripple="">Queue for signing</button>
+<a class="inline-flex flex-1 items-center justify-center rounded-[6px] border border-mist py-3 text-center text-[11px] font-medium uppercase tracking-[0.08em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-paper" href="university.html">Cancel</a>
+</div>
+</main>
+
+<footer class="flex w-full flex-col items-center justify-between gap-6 border-t border-mist/50 px-8 py-12 md:flex-row">
+<div class="flex flex-wrap justify-center gap-8 font-sans text-[11px] uppercase tracking-widest text-ink/50">
+<a class="nav-link hover:text-ink" href="privacy.html">Privacy</a>
+<a class="nav-link hover:text-ink" href="terms.html">Terms</a>
+<a class="nav-link hover:text-ink" href="registry.html">Registry</a>
+</div>
+<p class="font-sans text-[11px] uppercase tracking-widest text-ink/30">© 2026 CertiChain Ledger</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
