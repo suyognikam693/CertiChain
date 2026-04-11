@@ -117,94 +117,44 @@
 <a class="font-serif text-lg py-2 border-b border-mist/40" href="university.html">Issuer login</a>
 <button type="button" class="mt-2 w-full rounded-[6px] border border-mist py-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink hover:bg-surface-container-low icon-btn" data-ripple="">Connect Wallet</button>
 </nav>
+
+<!-- Result Section (Verified State) -->
 <main class="mx-auto max-w-[640px] px-6 pb-24 pt-28">
-<div class="text-center mb-12">
-<h1 class="font-serif text-[48px] leading-[1.1] tracking-tight mb-4 text-ink">Verify a credential.</h1>
-<p class="font-body text-[15px] text-on-surface-variant opacity-70">
-                Paste the certificate hash or scan the QR code. No account needed.
-            </p>
-</div>
-<div data-verify-tabs="">
-<div class="flex justify-center mb-10">
-<div class="inline-flex p-1 bg-surface-container-low rounded-full border border-mist/50 shadow-[0_1px_3px_rgba(15,15,15,0.04)]" role="tablist" aria-label="Verification method">
-<button type="button" role="tab" aria-selected="false" data-verify-tab="scan" class="tab-pill px-6 py-2 rounded-full font-label text-[11px] uppercase tracking-[0.08em] text-ink opacity-60 hover:opacity-100">
-                    Scan QR
-                </button>
-<button type="button" role="tab" aria-selected="true" data-verify-tab="paste" class="tab-pill px-6 py-2 rounded-full font-label text-[11px] uppercase tracking-[0.08em] bg-ink text-paper shadow-sm">
-                    Paste Hash
-                </button>
-</div>
-</div>
-<section data-verify-panel="paste" class="space-y-6 mb-10" role="tabpanel">
-<div class="flex flex-col">
-<label class="font-label text-[11px] uppercase tracking-[0.08em] mb-2 px-1 text-on-surface-variant">Certificate Hash</label>
-<div class="relative group">
-<input class="w-full h-12 px-4 bg-surface-container-low border border-mist/50 rounded-[6px] font-mono text-[13px] focus:outline-none focus:border-seal transition-colors" placeholder="Paste certificate hash (0x + 64 hex)" type="text" value="0x8920a8b5c6d7e9f0123456789abcdef0123456789abcdef0123456789abcdef"/>
-<div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-<span class="material-symbols-outlined text-ink/30 text-lg">content_paste</span>
-</div>
-</div>
-</div>
-<button type="button" class="btn-primary w-full h-12 bg-ink text-paper rounded-[6px] font-label text-[11px] uppercase tracking-[0.15em] font-semibold hover:bg-seal icon-btn" data-ripple="">
+    <div class="text-center mb-12">
+        <h1 class="font-serif text-[48px] leading-[1.1] tracking-tight mb-4 text-ink">Verify a credential.</h1>
+        <p class="font-body text-[15px] text-on-surface-variant opacity-70">
+            Paste the certificate hash or scan the QR code. No account needed.
+        </p>
+    </div>
+
+    <div data-verify-tabs="">
+        <div class="flex justify-center mb-10">
+            <div class="inline-flex p-1 bg-surface-container-low rounded-full border border-mist/50 shadow-[0_1px_3px_rgba(15,15,15,0.04)]" role="tablist">
+                <button type="button" role="tab" data-verify-tab="scan" class="tab-pill px-6 py-2 rounded-full font-label text-[11px] uppercase tracking-[0.08em] opacity-60">Scan QR</button>
+                <button type="button" role="tab" data-verify-tab="paste" class="tab-pill px-6 py-2 rounded-full font-label text-[11px] uppercase tracking-[0.08em] bg-ink text-paper shadow-sm">Paste Hash</button>
+            </div>
+        </div>
+
+        <section data-verify-panel="paste" class="space-y-6 mb-10">
+            <div class="flex flex-col">
+                <label class="font-label text-[11px] uppercase tracking-[0.08em] mb-2 px-1 text-on-surface-variant">Certificate Hash</label>
+                <div class="relative group">
+                    <input id="hash-input" class="w-full h-12 px-4 bg-surface-container-low border border-mist/50 rounded-[6px] font-mono text-[13px] focus:outline-none focus:border-seal transition-colors" placeholder="0x..." type="text" />
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <span class="material-symbols-outlined text-ink/30 text-lg">content_paste</span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="lookup-btn" data-lookup-btn class="btn-primary w-full h-12 bg-ink text-paper rounded-[6px] font-label text-[11px] uppercase tracking-[0.15em] font-semibold hover:bg-seal transition-all">
                 Look Up
             </button>
-</section>
-<section data-verify-panel="scan" class="hidden mb-10" role="tabpanel">
-<p class="font-label text-[11px] uppercase tracking-[0.08em] text-on-surface-variant text-center mb-6">Camera preview (demo)</p>
-<div class="aspect-square w-full max-w-[400px] mx-auto relative rounded-[6px] border border-mist flex items-center justify-center overflow-hidden bg-ink">
-<div class="absolute inset-0 opacity-40">
-<div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDOKCvyXcB_hQlByaLloEYZkpqIUb1OMVwq7Srq-wENbUQ3OJieIbsr4pJXQZzrKUlRmFxpwm-vO68-G5mvGHSPkA9ewCXnKJbXKh_bGD0xCxkUaLT2RAxLGTblgPCi1nVgROAbRzD3dt7lbRV4oktNghon_C84kpcl7lx_ENcTRG0fdDmxvGYRJl54JRzJUwO74HHi_MRypMrwza7GENscv9aRcTzPumKgpYcFwx5GNQAYenukHbK9Jhs166oCYext6sNv5_vxYbc')"></div>
-</div>
-<div class="relative w-64 h-64 border border-paper/30">
-<div class="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-seal"></div>
-<div class="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-seal"></div>
-<div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-2 border-l-2 border-seal"></div>
-<div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-2 border-r-2 border-seal"></div>
-</div>
-<div class="absolute bottom-6 w-full text-center">
-<p class="font-label text-[11px] text-paper uppercase tracking-widest bg-ink/40 py-1 px-4 inline-block rounded-[6px]">Position QR in frame</p>
-</div>
-</div>
-<button type="button" class="mt-8 w-full h-12 border border-mist/80 text-ink rounded-[6px] font-label text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-surface-container-low icon-btn" data-ripple="">Simulate successful scan</button>
-</section>
-<!-- Result Section (Verified State) -->
-<div class="interactive-surface relative overflow-hidden bg-surface-container-lowest rounded-[6px] border border-mist/50">
-<div class="absolute top-0 left-0 w-full h-1 bg-seal"></div>
-<div class="p-8">
-<div class="flex justify-between items-start mb-6">
-<div class="flex items-center gap-2 px-2 py-1 border border-[#2A7A5A]">
-<span class="material-symbols-outlined text-[#2A7A5A] text-[14px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
-<span class="font-mono text-[11px] text-[#2A7A5A] tracking-widest uppercase">Verified</span>
-</div>
-<div class="text-right">
-<span class="font-mono text-[12px] text-ink/30 uppercase tracking-tighter">Chain ID: 137</span>
-</div>
-</div>
-<div class="mb-8">
-<h2 class="font-serif text-[28px] leading-tight mb-2 text-ink">Master of Science in Cryptography</h2>
-<div class="space-y-1">
-<p class="font-body text-ink font-medium">Elena Vance</p>
-<p class="font-body text-on-surface-variant text-sm">University of Washington · Academic Ledger</p>
-<p class="font-body text-on-surface-variant/60 text-sm italic">Issued: June 14, 2023</p>
-</div>
-</div>
-<div class="flex justify-between items-end pt-6">
-<div class="space-y-1">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-ink/40 text-[16px]">link</span>
-<span class="font-mono text-[12px] text-on-surface-variant">Block #43,109,241</span>
-</div>
-<p class="font-mono text-[12px] text-ink/40">Anchored on Polygon</p>
-</div>
-<div class="text-right">
-<p class="font-mono text-[12px] text-ink/20">1.84s</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-<p class="text-center font-mono text-[12px] text-ink/35 mt-10">Demo verification · <a class="underline underline-offset-4 hover:text-seal nav-link" href="student.html">Open student vault</a></p>
+        </section>
+
+        <div id="verify-result"></div>
+    </div>
 </main>
+
+
 <footer class="w-full py-12 px-8 flex flex-col sm:flex-row gap-6 justify-between items-center border-t border-mist/30">
 <p class="font-label text-[11px] uppercase tracking-widest text-ink opacity-50">© 2026 CertiChain Ledger. All Rights Reserved.</p>
 <div class="flex flex-wrap gap-8 justify-center">

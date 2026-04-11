@@ -7,13 +7,11 @@ import hashlib
 import json
 import io
 import csv
-import time
 import random
 import string
 from datetime import datetime, timedelta
-from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -36,7 +34,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],           # tighten in prod
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,13 +48,15 @@ TOKEN_EXPIRE_HOURS = 8
 
 # ──────────────────────────────────────────────
 # Predefined Users
+# IMPORTANT: "name" must match the name field in your CSV exactly
+# so the student vault query can find their credential
 # ──────────────────────────────────────────────
 STUDENT_USERS = {
-    "suyog":    {"password": "123",  "name": "Suyog Patil",    "wallet": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"},
-    "aaditya":  {"password": "456",  "name": "Aaditya Sharma", "wallet": "0x8f3d12Cc5541C0532811a2b933Bc8d6484f1cDa"},
-    "priya":    {"password": "789",  "name": "Priya Singh",    "wallet": "0x1a2b33Cc7722D0641925c4b744Cc0f8695g2cFb"},
-    "rahul":    {"password": "321",  "name": "Rahul Verma",    "wallet": "0x9e4f56Dd8833E1752036d5c855Dd1g9706h3dGc"},
-    "ananya":   {"password": "654",  "name": "Ananya Iyer",    "wallet": "0x3c5d78Ee9944F2863147e6d966Ee2h0817i4eHd"},
+    "suyog":   {"password": "123", "name": "Suyog Nikam",   "wallet": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"},
+    "aaditya": {"password": "456", "name": "Aaditya Sharma", "wallet": "0x8f3d12Cc5541C0532811a2b933Bc8d6484f1cDa"},
+    "priya":   {"password": "789", "name": "Priya Singh",    "wallet": "0x1a2b33Cc7722D0641925c4b744Cc0f8695g2cFb"},
+    "rahul":   {"password": "321", "name": "Rahul Verma",    "wallet": "0x9e4f56Dd8833E1752036d5c855Dd1g9706h3dGc"},
+    "ananya":  {"password": "654", "name": "Ananya Iyer",    "wallet": "0x3c5d78Ee9944F2863147e6d966Ee2h0817i4eHd"},
 }
 
 UNIVERSITY_USERS = {
@@ -79,14 +79,16 @@ def get_db():
 
 
 # ──────────────────────────────────────────────
-# DB Init (run once at startup)
+# DB Init — runs every startup, safe to re-run
 # ──────────────────────────────────────────────
 def init_db():
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cur = conn.cursor()
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS credentials (
             id              SERIAL PRIMARY KEY,
+            did             TEXT NOT NULL DEFAULT 'UNKNOWN',
             hash            TEXT UNIQUE NOT NULL,
             student_data    JSONB NOT NULL,
             university      TEXT NOT NULL,
@@ -100,10 +102,22 @@ def init_db():
             polygon_address TEXT
         );
     """)
-    cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_credentials_hash
-        ON credentials(hash);
-    """)
+
+    # Safe migrations for anyone who created table before these columns existed
+    migrations = [
+        ("did",             "TEXT NOT NULL DEFAULT 'UNKNOWN'"),
+        ("chain_id",        "INT DEFAULT 137"),
+        ("block_number",    "BIGINT"),
+        ("tx_hash",         "TEXT"),
+        ("polygon_address", "TEXT"),
+        ("revoked_at",      "TIMESTAMPTZ"),
+    ]
+    for col, definition in migrations:
+        cur.execute(f"ALTER TABLE credentials ADD COLUMN IF NOT EXISTS {col} {definition};")
+
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_credentials_hash ON credentials(hash);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_credentials_did  ON credentials(did);")
+
     conn.commit()
     cur.close()
     conn.close()
@@ -119,28 +133,16 @@ def startup():
 # Helpers
 # ──────────────────────────────────────────────
 def sha256_json(data: dict) -> str:
-    """Deterministic SHA-256 of a JSON payload."""
+    """Deterministic SHA-256 of a sorted JSON payload."""
     canonical = json.dumps(data, sort_keys=True, ensure_ascii=False)
     return "0x" + hashlib.sha256(canonical.encode()).hexdigest()
 
 
-def fake_blockchain_receipt() -> dict:
-    """
-    Simulate the delay + metadata of an on-chain transaction.
-    Returns fake but plausible Polygon Mainnet data.
-    """
-    time.sleep(random.uniform(0.8, 1.6))          # simulate confirm time
+def fake_receipt() -> dict:
     block = random.randint(43_000_000, 46_000_000)
     tx    = "0x" + "".join(random.choices(string.hexdigits.lower(), k=64))
     addr  = "0x4a2b" + "".join(random.choices(string.hexdigits.lower(), k=36)) + "c91e"
-    return {
-        "block_number":    block,
-        "tx_hash":         tx,
-        "chain_id":        137,
-        "polygon_address": addr,
-        "gas_used":        random.randint(45_000, 80_000),
-        "confirmed_in_ms": int(random.uniform(800, 1600)),
-    }
+    return {"block_number": block, "tx_hash": tx, "chain_id": 137, "polygon_address": addr}
 
 
 def create_token(username: str, role: str) -> str:
@@ -152,11 +154,11 @@ def create_token(username: str, role: str) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_token(token: str) -> dict:
+def decode_token(tok: str) -> dict:
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return jwt.decode(tok, SECRET_KEY, algorithms=[ALGORITHM])
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(status_code=401, detail="Token expired — please log in again")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -205,13 +207,12 @@ class RevokeRequest(BaseModel):
 def student_login(body: StudentLoginRequest):
     user = STUDENT_USERS.get(body.username)
     if not user or user["password"] != body.password:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_token(body.username, "student")
+        raise HTTPException(status_code=401, detail="Invalid username or password")
     return {
-        "token":   token,
-        "role":    "student",
-        "name":    user["name"],
-        "wallet":  user["wallet"],
+        "token":    create_token(body.username, "student"),
+        "role":     "student",
+        "name":     user["name"],
+        "wallet":   user["wallet"],
         "username": body.username,
     }
 
@@ -220,19 +221,18 @@ def student_login(body: StudentLoginRequest):
 def university_login(body: UniversityLoginRequest):
     user = UNIVERSITY_USERS.get(body.username)
     if not user or user["password"] != body.password:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_token(body.username, "university")
+        raise HTTPException(status_code=401, detail="Invalid username or password")
     return {
-        "token":        token,
-        "role":         "university",
-        "name":         user["name"],
-        "username":     body.username,
-        "chain_id":     user["chain_id"],
+        "token":    create_token(body.username, "university"),
+        "role":     "university",
+        "name":     user["name"],
+        "username": body.username,
+        "chain_id": user["chain_id"],
     }
 
 
 # ══════════════════════════════════════════════
-# UNIVERSITY ENDPOINTS
+# UNIVERSITY — Upload CSV
 # ══════════════════════════════════════════════
 
 @app.post("/api/university/upload-csv")
@@ -241,51 +241,61 @@ def upload_csv(
     payload: dict = Depends(require_university),
     db = Depends(get_db),
 ):
-    """
-    Accept a CSV of graduates, hash each row as JSON,
-    store in PostgreSQL, fake a blockchain receipt.
-    """
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only .csv files accepted")
 
-    content   = file.file.read().decode("utf-8-sig")  # handle BOM
-    reader    = csv.DictReader(io.StringIO(content))
-    rows      = list(reader)
+    content = file.file.read().decode("utf-8-sig")  # handles BOM from Excel
+    reader  = csv.DictReader(io.StringIO(content))
+    rows    = list(reader)
 
     if not rows:
         raise HTTPException(status_code=400, detail="CSV is empty")
 
     university_name = UNIVERSITY_USERS[payload["sub"]]["name"]
-    results         = []
-    cur             = db.cursor()
+    results = []
+    cur = db.cursor()
 
     for row in rows:
-        # Clean whitespace
+        # Strip whitespace from all keys and values
         student = {k.strip(): v.strip() for k, v in row.items() if k}
+
+        # ── 2-column format: "Student ID" + "Student Details (JSON)" ──
+        if not student.get("legal_name") and "Student Details (JSON)" in student:
+            try:
+                details = json.loads(student["Student Details (JSON)"])
+                student["legal_name"] = details.get("name", "Unknown")
+                student["student_id"] = student.get("Student ID", "")
+                student.update(details)  # merge all detail fields
+            except Exception:
+                pass
+
+        # Skip rows with no name
         if not student.get("legal_name"):
             continue
 
-        cert_hash = sha256_json(student)
+        # Determine DID from whatever column is present
+        did = (
+            student.get("student_id")
+            or student.get("Student ID")
+            or student.get("did")
+            or "UNKNOWN"
+        )
 
-        # Fake blockchain receipt (slowed once per batch, not per row)
-        receipt = {
-            "block_number":    random.randint(43_000_000, 46_000_000),
-            "tx_hash":         "0x" + "".join(random.choices(string.hexdigits.lower(), k=64)),
-            "chain_id":        137,
-            "polygon_address": "0x4a2b" + "".join(random.choices(string.hexdigits.lower(), k=36)) + "c91e",
-        }
+        cert_hash = sha256_json(student)
+        receipt   = fake_receipt()
 
         try:
             cur.execute(
                 """
                 INSERT INTO credentials
-                    (hash, student_data, university, issued_by,
+                    (did, hash, student_data, university, issued_by,
                      block_number, tx_hash, chain_id, polygon_address)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (hash) DO NOTHING
                 RETURNING id
                 """,
                 (
+                    did,
                     cert_hash,
                     json.dumps(student),
                     university_name,
@@ -298,11 +308,12 @@ def upload_csv(
             )
             inserted = cur.fetchone()
             results.append({
-                "name":      student.get("legal_name"),
-                "hash":      cert_hash,
-                "status":    "issued" if inserted else "duplicate",
-                "tx_hash":   receipt["tx_hash"],
-                "block":     receipt["block_number"],
+                "name":    student.get("legal_name"),
+                "did":     did,
+                "hash":    cert_hash,
+                "status":  "issued" if inserted else "duplicate",
+                "tx_hash": receipt["tx_hash"],
+                "block":   receipt["block_number"],
             })
         except Exception as e:
             db.rollback()
@@ -325,17 +336,20 @@ def upload_csv(
     }
 
 
+# ══════════════════════════════════════════════
+# UNIVERSITY — Dashboard / Revoke
+# ══════════════════════════════════════════════
+
 @app.get("/api/university/credentials")
 def list_credentials(
     payload: dict = Depends(require_university),
     db = Depends(get_db),
 ):
-    """List all credentials issued by this university."""
     university_name = UNIVERSITY_USERS[payload["sub"]]["name"]
     cur = db.cursor()
     cur.execute(
         """
-        SELECT id, hash, student_data, issued_at, is_revoked,
+        SELECT id, did, hash, student_data, issued_at, is_revoked,
                revoked_at, block_number, tx_hash, chain_id
         FROM credentials
         WHERE university = %s
@@ -355,7 +369,6 @@ def revoke_credential(
     payload: dict = Depends(require_university),
     db = Depends(get_db),
 ):
-    """Revoke a credential by hash (sets is_revoked = TRUE)."""
     university_name = UNIVERSITY_USERS[payload["sub"]]["name"]
     cur = db.cursor()
     cur.execute(
@@ -376,12 +389,10 @@ def revoke_credential(
             status_code=404,
             detail="Credential not found, already revoked, or not owned by your institution",
         )
-
     return {
-        "message":    "Credential revoked and new ledger state emitted",
+        "message":    "Credential revoked — new ledger state emitted",
         "hash":       body.hash,
         "revoked_at": datetime.utcnow().isoformat(),
-        "chain_note": "Revocation attested on Polygon Mainnet (simulated)",
     }
 
 
@@ -395,13 +406,11 @@ def university_stats(
     cur.execute(
         """
         SELECT
-            COUNT(*)                                          AS total_issued,
-            COUNT(*) FILTER (WHERE is_revoked = FALSE)       AS active,
-            COUNT(*) FILTER (WHERE is_revoked = TRUE)        AS revoked,
-            COUNT(*) FILTER (
-                WHERE issued_at >= NOW() - INTERVAL '24 hours'
-                AND is_revoked = FALSE
-            )                                                 AS anchored_today
+            COUNT(*)                                                     AS total_issued,
+            COUNT(*) FILTER (WHERE is_revoked = FALSE)                  AS active,
+            COUNT(*) FILTER (WHERE is_revoked = TRUE)                   AS revoked,
+            COUNT(*) FILTER (WHERE issued_at >= NOW() - INTERVAL '24 hours'
+                             AND   is_revoked = FALSE)                  AS anchored_today
         FROM credentials
         WHERE university = %s
         """,
@@ -413,7 +422,7 @@ def university_stats(
 
 
 # ══════════════════════════════════════════════
-# STUDENT ENDPOINTS
+# STUDENT — Vault
 # ══════════════════════════════════════════════
 
 @app.get("/api/student/credentials")
@@ -421,26 +430,28 @@ def student_credentials(
     payload: dict = Depends(require_student),
     db = Depends(get_db),
 ):
-    """Return credentials where student_data->>'student_id' matches username."""
     username = payload["sub"]
     user     = STUDENT_USERS[username]
+    name     = user["name"]
     cur      = db.cursor()
 
-    # Match by name OR wallet address stored in data
+    # Match on legal_name OR name (covers both CSV formats) OR wallet
     cur.execute(
         """
-        SELECT id, hash, student_data, university, issued_at,
+        SELECT id, did, hash, student_data, university, issued_at,
                is_revoked, block_number, tx_hash, chain_id
         FROM credentials
         WHERE
-            student_data->>'legal_name' ILIKE %s
+            student_data->>'legal_name'    ILIKE %s
+            OR student_data->>'name'       ILIKE %s
             OR student_data->>'wallet_address' = %s
         ORDER BY issued_at DESC
         """,
-        (f"%{user['name']}%", user["wallet"]),
+        (f"%{name}%", f"%{name}%", user["wallet"]),
     )
     rows = cur.fetchall()
     cur.close()
+
     return {
         "name":        user["name"],
         "wallet":      user["wallet"],
@@ -449,15 +460,11 @@ def student_credentials(
 
 
 # ══════════════════════════════════════════════
-# EMPLOYER / PUBLIC VERIFY
+# EMPLOYER — Public Verify (no auth needed)
 # ══════════════════════════════════════════════
 
 @app.post("/api/verify")
 def verify_credential(body: VerifyHashRequest, db = Depends(get_db)):
-    """
-    Public endpoint — no auth required.
-    Returns credential status for a given hash.
-    """
     h = body.hash.strip()
     if not h:
         raise HTTPException(status_code=400, detail="Hash is required")
@@ -465,7 +472,7 @@ def verify_credential(body: VerifyHashRequest, db = Depends(get_db)):
     cur = db.cursor()
     cur.execute(
         """
-        SELECT hash, student_data, university, issued_at,
+        SELECT hash, did, student_data, university, issued_at,
                is_revoked, revoked_at, block_number, tx_hash,
                chain_id, polygon_address
         FROM credentials
@@ -477,22 +484,27 @@ def verify_credential(body: VerifyHashRequest, db = Depends(get_db)):
     cur.close()
 
     if not row:
+        # Clean not-found response — no exception, just found: false
         return {
             "found":   False,
             "status":  "NOT_FOUND",
             "message": "No credential matching this hash exists in the registry.",
         }
 
-    row = dict(row)
-    status_str = "REVOKED" if row["is_revoked"] else "VERIFIED"
+    row          = dict(row)
+    sd           = row["student_data"]
+    student_name = sd.get("legal_name") or sd.get("name") or "—"
+    program      = sd.get("program")    or sd.get("major") or "—"
+    degree_class = sd.get("degree_class") or sd.get("degree") or "—"
 
     return {
         "found":           True,
-        "status":          status_str,
+        "status":          "REVOKED" if row["is_revoked"] else "VERIFIED",
         "hash":            row["hash"],
-        "student_name":    row["student_data"].get("legal_name", "—"),
-        "program":         row["student_data"].get("program", "—"),
-        "degree_class":    row["student_data"].get("degree_class", "—"),
+        "did":             row["did"],
+        "student_name":    student_name,
+        "program":         program,
+        "degree_class":    degree_class,
         "university":      row["university"],
         "issued_at":       row["issued_at"].isoformat() if row["issued_at"] else None,
         "is_revoked":      row["is_revoked"],
@@ -507,7 +519,6 @@ def verify_credential(body: VerifyHashRequest, db = Depends(get_db)):
 
 @app.get("/api/verify/{cert_hash}")
 def verify_credential_get(cert_hash: str, db = Depends(get_db)):
-    """GET variant — useful for direct URL sharing."""
     return verify_credential(VerifyHashRequest(hash=cert_hash), db)
 
 
