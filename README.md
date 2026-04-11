@@ -172,12 +172,19 @@ legal_name,student_id,program,degree_class,wallet_address,graduation_date
 |---|---|---|---|
 | POST | `/api/auth/student/login` | None | Student login → JWT |
 | POST | `/api/auth/university/login` | None | University login → JWT |
-| POST | `/api/university/upload-csv` | University JWT | Upload CSV, hash + store rows |
+| POST | `/api/university/upload-csv` | University JWT | Upwards legacy CSV parsing, hash + store rows |
 | GET | `/api/university/credentials` | University JWT | List issued credentials |
 | POST | `/api/university/revoke` | University JWT | Set is_revoked = TRUE |
 | GET | `/api/university/stats` | University JWT | Dashboard stats |
 | GET | `/api/student/credentials` | Student JWT | Credentials for logged-in student |
-| POST | `/api/verify` | None | Verify by hash (public) |
+| GET | `/api/credentials/student/{student_did}` | None | Fetches all credentials associated with a student UID including Merkle proofs and IPFS CID |
+| GET | `/api/credentials/student/{student_did}/qrs` | None | Performs internal check and bakes validity status into a JSON QR payload |
+| POST | `/api/credentials/batch/add` | None | Manually stages individual JSON credentials to Memory array |
+| POST | `/api/credentials/batch/upload-csv` | None | Stages a batch CSV array into Memory |
+| POST | `/api/credentials/batch/commit` | None | Aggregates tracking payload mapping Merkle tree securely onto chain |
+| POST | `/api/credentials/verify-with-proof` | None | Validates chain credential hashes safely processing Proof parameters |
+| GET | `/api/credentials/{batch_id}/{leaf_index}/share-link` | None | Generates automated URL verification parameter string for Employers |
+| POST | `/api/verify` | None | Verify by hash (legacy public) |
 | GET | `/api/verify/{hash}` | None | Verify by hash via GET |
 | GET | `/api/health` | None | Health check |
 

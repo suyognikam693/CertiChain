@@ -77,6 +77,9 @@ def get_db():
     finally:
         conn.close()
 
+BATCHES = {}
+
+
 
 # ──────────────────────────────────────────────
 # DB Init — runs every startup, safe to re-run
@@ -197,6 +200,26 @@ class VerifyHashRequest(BaseModel):
 
 class RevokeRequest(BaseModel):
     hash: str
+
+class BatchAddRequest(BaseModel):
+    batch_id: str
+    student_did: str = ""
+    student_name: str = ""
+    student_email: str = ""
+    university_name: str = ""
+    degree: str = ""
+    branch: str = ""
+    graduation_year: str = ""
+    cgpa: str = ""
+
+class BatchCommitRequest(BaseModel):
+    batch_id: str
+
+class VerifyProofRequest(BaseModel):
+    batch_id: str = ""
+    credential_hash: str
+    proof: list[str] = []
+    leaf_index: int = 0
 
 
 # ══════════════════════════════════════════════
@@ -460,8 +483,94 @@ def student_credentials(
 
 
 # ══════════════════════════════════════════════
+# STUDENT CREDENTIALS BY DID
+# ══════════════════════════════════════════════
+
+@app.get("/api/credentials/student/{student_did}")
+def get_student_credentials_by_did(student_did: str, db = Depends(get_db)):
+    cur = db.cursor()
+    cur.execute("SELECT hash, is_revoked, id, student_data FROM credentials WHERE did = %s", (student_did,))
+    rows = cur.fetchall()
+    cur.close()
+    
+    results = []
+    for r in rows:
+        mock_proof = "0x" + hashlib.sha256(str(r["id"]).encode()).hexdigest()
+        sd = r["student_data"]
+        
+        results.append({
+            "credential_hash": r["hash"],
+            "proof": [mock_proof],
+            "ipfs_cid": f"QmMockCIDFor{r['hash'][:8]}",
+            "cid": f"QmMockCIDFor{r['hash'][:8]}",
+            "degree": sd.get("degree_class", sd.get("degree", "Degree")),
+            "program": sd.get("program", sd.get("major", "Program")),
+            "university": sd.get("university", "University"),
+            "student_name": sd.get("student_name", sd.get("legal_name", sd.get("name", "Student"))),
+            "issued_at": r.get("issued_at", ""),
+            "isVerified": not r["is_revoked"]
+        })
+    return {"credentials": results}
+
+@app.get("/api/credentials/student/{student_did}/qrs")
+def get_student_qrs(student_did: str, db = Depends(get_db)):
+    cur = db.cursor()
+    cur.execute("SELECT hash, is_revoked, student_data FROM credentials WHERE did = %s", (student_did,))
+    rows = cur.fetchall()
+    cur.close()
+    
+    qrs = []
+    for r in rows:
+        status = "REVOKED" if r["is_revoked"] else "VERIFIED"
+        data = {
+            "hash": r["hash"],
+            "did": student_did,
+            "status": status,
+            "degree": r["student_data"].get("degree_class", r["student_data"].get("degree", "Degree"))
+        }
+        qrs.append({
+            "qr_data": json.dumps(data)
+        })
+    return qrs
+
+# ══════════════════════════════════════════════
 # EMPLOYER — Public Verify (no auth needed)
 # ══════════════════════════════════════════════
+
+@app.post("/api/credentials/verify-with-proof")
+def verify_credential_with_proof(body: VerifyProofRequest, db = Depends(get_db)):
+    cur = db.cursor()
+    cur.execute("SELECT * FROM credentials WHERE hash = %s", (body.credential_hash,))
+    row = cur.fetchone()
+    cur.close()
+    
+    if not row:
+        return {
+            "is_valid": False, 
+            "is_revoked": False, 
+            "message": "No credential matching this hash exists in the registry."
+        }
+    
+    sd = row["student_data"]
+    
+    return {
+        "is_valid": True,
+        "is_revoked": row["is_revoked"],
+        "university_name": row["university"],
+        "graduation_year": sd.get("graduation_year", sd.get("year", "N/A")),
+        "student_name": sd.get("student_name", sd.get("legal_name", sd.get("name", "N/A"))),
+        "degree": sd.get("degree_class", sd.get("degree", "N/A")),
+        "metadata": sd,
+        "chain_id": row["chain_id"],
+        "tx_hash": row["tx_hash"],
+        "block_number": row["block_number"]
+    }
+
+@app.get("/api/credentials/{batch_id}/{leaf_index}/share-link")
+def get_share_link(batch_id: str, leaf_index: int):
+    # Simulated share link to employer portal
+    url = f"http://localhost:5173/employer?batch_id={batch_id}&leaf_index={leaf_index}"
+    return {"url": url}
 
 @app.post("/api/verify")
 def verify_credential(body: VerifyHashRequest, db = Depends(get_db)):
@@ -521,6 +630,132 @@ def verify_credential(body: VerifyHashRequest, db = Depends(get_db)):
 def verify_credential_get(cert_hash: str, db = Depends(get_db)):
     return verify_credential(VerifyHashRequest(hash=cert_hash), db)
 
+
+# ══════════════════════════════════════════════
+# BATCH ISSUANCE ENDPOINTS
+# ══════════════════════════════════════════════
+
+@app.post("/api/credentials/batch/add")
+def batch_add_json(body: BatchAddRequest, payload: dict = Depends(require_university)):
+    if body.batch_id not in BATCHES:
+        BATCHES[body.batch_id] = []
+    
+    cred_data = body.dict()
+    student = {
+        "legal_name": body.student_name,
+        "did": body.student_did,
+        "email": body.student_email,
+        "degree_class": body.degree,
+        "program": body.branch,
+        "cgpa": body.cgpa,
+        "graduation_year": body.graduation_year
+    }
+    cred_data["raw_student"] = student
+    
+    BATCHES[body.batch_id].append(cred_data)
+    leaf_index = len(BATCHES[body.batch_id]) - 1
+    
+    # Generate mock IPFS for this addition
+    bare_cid = "Qm" + "".join(random.choices(string.ascii_letters + string.digits, k=44))
+    
+    return {
+        "status": "success",
+        "leaf_index": leaf_index,
+        "ipfs_cid": bare_cid
+    }
+
+@app.post("/api/credentials/batch/upload-csv")
+def batch_upload_csv(
+    batch_id: str,
+    file: UploadFile = File(...),
+    payload: dict = Depends(require_university)
+):
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only .csv files accepted")
+    
+    content = file.file.read().decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(content))
+    rows = list(reader)
+    
+    if batch_id not in BATCHES:
+        BATCHES[batch_id] = []
+        
+    added = 0
+    for row in rows:
+        student = {k.strip(): v.strip() for k, v in row.items() if k}
+        
+        if not student.get("legal_name") and "Student Details (JSON)" in student:
+            try:
+                details = json.loads(student["Student Details (JSON)"])
+                student["legal_name"] = details.get("name", "Unknown")
+                student["student_id"] = student.get("Student ID", "")
+                student.update(details)
+            except Exception:
+                pass
+        
+        if not student.get("legal_name"):
+            continue
+            
+        did = student.get("student_id") or student.get("Student ID") or student.get("did") or "UNKNOWN"
+        cred_data = {
+            "batch_id": batch_id,
+            "student_did": did,
+            "student_name": student.get("legal_name"),
+            "raw_student": student
+        }
+        BATCHES[batch_id].append(cred_data)
+        added += 1
+        
+    return {"status": "success", "added": added}
+
+@app.post("/api/credentials/batch/commit")
+def batch_commit(body: BatchCommitRequest, payload: dict = Depends(require_university), db = Depends(get_db)):
+    if body.batch_id not in BATCHES or len(BATCHES[body.batch_id]) == 0:
+        raise HTTPException(status_code=400, detail="Batch empty or not found")
+        
+    items = BATCHES[body.batch_id]
+    university_name = UNIVERSITY_USERS[payload["sub"]]["name"]
+    cur = db.cursor()
+    
+    merkle_base = "".join([sha256_json(i["raw_student"]) for i in items])
+    merkle_root = "0x" + hashlib.sha256(merkle_base.encode()).hexdigest()
+    
+    receipt = fake_receipt()
+    
+    for item in items:
+        student = item["raw_student"]
+        cert_hash = sha256_json(student)
+        did = item["student_did"]
+        
+        try:
+            cur.execute(
+                """
+                INSERT INTO credentials
+                    (did, hash, student_data, university, issued_by,
+                     block_number, tx_hash, chain_id, polygon_address)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (hash) DO NOTHING
+                """,
+                (
+                    did, cert_hash, json.dumps(student), university_name,
+                    payload["sub"], receipt["block_number"], receipt["tx_hash"],
+                    receipt["chain_id"], receipt["polygon_address"]
+                ),
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+            
+    db.commit()
+    cur.close()
+    
+    del BATCHES[body.batch_id]
+    
+    return {
+        "status": "success",
+        "merkle_root": merkle_root,
+        "tx_hash": receipt["tx_hash"]
+    }
 
 # ══════════════════════════════════════════════
 # HEALTH
