@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CertiChain: A Decentralized Academic DigiLocker</title>
+    <meta name="description" content="Securely issue, store, and verify credentials on the Ethereum Sepolia network.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="background-container">
+        <!-- Canvas for Dark Mode 3D Mesh -->
+        <canvas id="mesh-canvas" aria-hidden="true"></canvas>
+        
+        <!-- Blobs for Light Mode -->
+        <div class="light-mode-gradients">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon"></span> CertiChain
+        </div>
+        <div class="header-controls">
+            <div class="network-status">
+                <span class="status-dot"></span> 
+                <span class="network-name">Network: Sepolia</span>
+            </div>
+            <button class="btn btn-primary" id="connect-wallet">Connect Wallet</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">The Future of<br><span class="text-gradient">Academic Trust.</span></h1>
+                <p class="hero-subtitle">Securely issue, store, and verify credentials on the Ethereum Sepolia network.</p>
+            </div>
+        </section>
+
+        <section class="cards-grid">
+            <div class="card glassmorphic group">
+                <div class="card-glow"></div>
+                <div class="card-icon">
+                    <img src="assets/backpack.png" alt="Student Desk Icon">
+                </div>
+                <div class="card-content">
+                    <div class="role-badge student-badge">Student Role</div>
+                    <h2>Student Desk</h2>
+                    <p>Access your Digital Desk to view certificates and generate instant verification QR codes.</p>
+                </div>
+                <div class="card-action">
+                    <button class="btn btn-secondary w-full">Enter Student Desk <span class="arrow">→</span></button>
+                </div>
+            </div>
+
+            <div class="card glassmorphic group">
+                <div class="card-glow"></div>
+                <div class="card-icon">
+                    <img src="assets/university.png" alt="University Hub Icon">
+                </div>
+                <div class="card-content">
+                    <div class="role-badge admin-badge pulse">Admin Role</div>
+                    <h2>University Hub</h2>
+                    <p>Batch-issue tamper-proof degrees using CSV templates and ZIP storage.</p>
+                </div>
+                <div class="card-action">
+                    <button class="btn btn-secondary w-full">Launch Portal <span class="arrow">→</span></button>
+                </div>
+            </div>
+
+            <div class="card glassmorphic group">
+                <div class="card-glow"></div>
+                <div class="card-icon">
+                    <img src="assets/shield.png" alt="Verifier Gateway Icon">
+                </div>
+                <div class="card-content">
+                    <div class="role-badge public-badge">Public Role</div>
+                    <h2>Verifier Gateway</h2>
+                    <p>Instant authentication. Drag-and-drop any PDF to verify its on-chain origin.</p>
+                </div>
+                <div class="card-action">
+                    <button class="btn btn-secondary w-full">Verify Now <span class="arrow">→</span></button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="ticker-wrap">
+            <div class="ticker">
+                <div class="ticker__item"><span>📈</span> Total Issued: <strong>142,851</strong></div>
+                <div class="ticker__item"><span>🟢</span> Active Verifiers: <strong>1,024</strong></div>
+                <div class="ticker__item"><span>⚡</span> Network Health: <strong>Optimal (Sepolia)</strong></div>
+                <div class="ticker__item"><span>🔗</span> Last Block: <strong>5519820</strong></div>
+                <div class="ticker__item"><span>🛡️</span> Smart Contract: <strong>0x7a...V1</strong></div>
+                
+                <div class="ticker__item"><span>📈</span> Total Issued: <strong>142,851</strong></div>
+                <div class="ticker__item"><span>🟢</span> Active Verifiers: <strong>1,024</strong></div>
+                <div class="ticker__item"><span>⚡</span> Network Health: <strong>Optimal (Sepolia)</strong></div>
+                <div class="ticker__item"><span>🔗</span> Last Block: <strong>5519820</strong></div>
+                <div class="ticker__item"><span>🛡️</span> Smart Contract: <strong>0x7a...V1</strong></div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="footer-brand">
+                <a href="#" class="footer-link">View Smart Contract on Etherscan</a>
+                <div class="ipfs-logo">
+                    <svg viewBox="0 0 100 100" width="20" height="20"><path fill="currentColor" d="M50 4.1L8.2 28.2v48.2L50 100.5l41.8-24.1V28.2L50 4.1zm33.1 66.8L50 90.1 16.9 70.9V32.7L50 13.5l33.1 19.2v38.2z"/><path fill="currentColor" d="M50 25L25 39.4v28.8L50 82.6l25-14.4V39.4L50 25z"/></svg>
+                    <span>Powered by IPFS</span>
+                </div>
+            </div>
+            
+            <div class="theme-toggle">
+                <span class="theme-label" id="theme-label">Dark Mode</span>
+                <label class="switch" aria-label="Toggle Dark/Light Mode">
+                    <input type="checkbox" id="theme-switch">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
