@@ -1257,11 +1257,20 @@ def get_student_qrs(student_did: str):
         except Exception:
             is_valid, is_revoked = False, False
 
+        verification_result = bool(is_valid and not is_revoked)
+        redirect_url = (
+            "https://suyognikam693.github.io/verify/"
+            if verification_result
+            else "https://suyognikam693.github.io/failed/"
+        )
+
         # --- THE DATA IN THE QR ---
-        # This is exactly what the scanner will display
+        # Encodes both the boolean result and the destination URL.
         final_status_json = {
+            "result": verification_result,
             "is_valid": is_valid,
             "is_revoked": is_revoked,
+            "redirect_url": redirect_url,
             "uid": student_did,
             "batch": batch_id,
             "verified_at": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')
