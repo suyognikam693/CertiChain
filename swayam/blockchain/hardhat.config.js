@@ -1,52 +1,32 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
-// ADD THIS LINE TEMPORARILY:
-console.log("My RPC URL is:", process.env.SEPOLIA_RPC_URL);
-/** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+import { defineConfig } from "hardhat/config";
+import hardhatEthers from "@nomicfoundation/hardhat-ethers";
+import hardhatVerify from "@nomicfoundation/hardhat-verify";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+export default defineConfig({
+  plugins: [hardhatEthers, hardhatVerify],
   solidity: {
-    version: "0.8.20",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+    profiles: {
+      default: {
+        version: "0.8.20",
       },
     },
   },
-
   networks: {
-    // Local development (In-memory)
-    hardhat: {
-      chainId: 31337,
-    },
-    // Persistent local node (npx hardhat node)
     localhost: {
+      type: "http",
+      chainType: "l1",
       url: "http://127.0.0.1:8545",
-      chainId: 31337,
     },
-    // --- ADD SEPOLIA HERE ---
-  sepolia: {
+    sepolia: {
+      type: "http",
+      chainType: "l1",
       url: process.env.SEPOLIA_RPC_URL || "",
-      // CHANGE THIS LINE to match your .env variable
-      accounts: process.env.UNIVERSITY_PRIVATE_KEY ? [process.env.UNIVERSITY_PRIVATE_KEY] : [],
-      chainId: 11155111,
+      accounts: process.env.UNIVERSITY_PRIVATE_KEY
+        ? [process.env.UNIVERSITY_PRIVATE_KEY]
+        : [],
     },
   },
-
-  // Add Etherscan verification so people can see your contract code
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
-  },
-
-  gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
-    currency: "USD",
-  },
-
-  paths: {
-    sources: "./contracts",
-    tests: "./test",
-    cache: "./cache",
-    artifacts: "./artifacts",
-  },
-};
+});
