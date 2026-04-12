@@ -3,12 +3,10 @@ frontend/package-lock.json
 frontend/node_modules/
 
 .venv
-<<<<<<< HEAD
-venv
-=======
 swayam/__pycache__
+swayam/backend/__pycache__
 swayam/backend/.env
 swayam/blockchain/.env
 swayam/blockchain/node_modules
 swayam/docker/blockchain/node_modules
->>>>>>> 93f6655 (badabingbadaboom)
+test_flow.py
