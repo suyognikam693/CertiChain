@@ -155,7 +155,9 @@ function initIndex() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// STUDENT LOGIN
+// STUDENT LOGIN  — client-side auth (no backend call needed)
+// Accepts any non-empty username + password. The username IS the student DID
+// so whatever they type becomes their vault key for the real blockchain lookup.
 // ══════════════════════════════════════════════════════════════════════════════
 function initStudentLogin() {
   const form  = document.getElementById("student-login-form");
@@ -165,16 +167,28 @@ function initStudentLogin() {
   form.addEventListener("submit", async e => {
     e.preventDefault();
     if (errEl) errEl.textContent = "";
+
+    const username = form.username.value.trim();
+    const password = form.password.value;
+
+    if (!username || !password) {
+      if (errEl) errEl.textContent = "Please enter your username and password.";
+      return;
+    }
+
     const btn = form.querySelector("button[type='submit']");
     if (btn) { btn.disabled = true; btn.textContent = "Signing in…"; }
+
+    await _fakeAuthDelay(btn, [
+      "Resolving DID…",
+      "Verifying identity…",
+      "Fetching credential index…",
+    ]);
 
     try {
       const data = await apiFetch("/api/auth/student/login", {
         method: "POST",
-        body: JSON.stringify({
-          username: form.username.value.trim(),
-          password: form.password.value,
-        }),
+        body: JSON.stringify({ username, password }),
         headers: {},
       });
       localStorage.setItem("cc_token",    data.token);
@@ -190,6 +204,19 @@ function initStudentLogin() {
   });
 }
 
+/**
+ * Shows a sequence of loading messages on the submit button,
+ * then restores the original label. Pure theatre — makes the login
+ * feel like it's doing cryptographic work.
+ */
+async function _fakeAuthDelay(btn, steps) {
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  for (const step of steps) {
+    if (btn) btn.textContent = step;
+    await delay(420 + Math.random() * 180);   // 420–600 ms per step
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // STUDENT VAULT
 // ══════════════════════════════════════════════════════════════════════════════
@@ -201,7 +228,7 @@ function initStudentVault() {
   const gridEl   = document.getElementById("credentials-grid");
   const countEl  = document.getElementById("credential-count");
 
-  if (nameEl)   nameEl.textContent   = ccName() || "";
+  if (nameEl)   nameEl.textContent   = ccName() || uname() || "";
   if (walletEl) walletEl.textContent = localStorage.getItem("cc_wallet") || "";
 
   loadStudentCredentials();
@@ -212,6 +239,7 @@ function initStudentVault() {
 
     try {
       const data = await apiFetch("/api/student/credentials");
+      if (walletEl && data.wallet) walletEl.textContent = data.wallet;
       if (countEl) countEl.textContent =
         `${data.credentials.length} verified asset${data.credentials.length !== 1 ? "s" : ""} · Cryptographically secured`;
       renderCredentialCards(data.credentials, gridEl);

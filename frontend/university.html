@@ -81,7 +81,7 @@ tailwind.config = {
 <header class="mb-10 flex flex-wrap items-end justify-between gap-6">
 <div>
 <h1 class="mb-2 font-serif text-[40px] leading-[1.1] tracking-tight text-ink">Registrar overview</h1>
-<p class="max-w-xl text-[15px] leading-relaxed text-on-surface-variant">Sardar Patel Institute of Technology · 12,840 credentials on record</p>
+<p id="uni-name" class="max-w-xl text-[15px] leading-relaxed text-on-surface-variant">Sardar Patel Institute of Technology · 12,840 credentials on record</p>
 </div>
 <a class="inline-flex items-center gap-1 font-sans text-[11px] uppercase tracking-[0.08em] text-seal sm:hidden" href="university-notifications.html">Notifications <span class="material-symbols-outlined text-base">chevron_right</span></a>
 </header>
@@ -101,15 +101,15 @@ tailwind.config = {
 <!-- Stats: tonal separation, no vertical rules between columns (DESIGN.md) -->
 <section class="mb-16 grid grid-cols-2 gap-10 md:grid-cols-4 md:gap-12">
 <div>
-<p class="font-serif text-3xl tracking-tight text-ink">12,840</p>
+<p id="stat-total" class="font-serif text-3xl tracking-tight text-ink">—</p>
 <p class="mt-2 font-sans text-[11px] uppercase tracking-[0.08em] text-ink/50">Total issued</p>
 </div>
 <div>
-<p class="font-serif text-3xl tracking-tight text-ink">99</p>
+<p id="stat-today" class="font-serif text-3xl tracking-tight text-ink">—</p>
 <p class="mt-2 font-sans text-[11px] uppercase tracking-[0.08em] text-ink/50">Anchored today</p>
 </div>
 <div>
-<p class="font-serif text-3xl tracking-tight text-error">2</p>
+<p id="stat-revoked" class="font-serif text-3xl tracking-tight text-error">—</p>
 <p class="mt-2 font-sans text-[11px] uppercase tracking-[0.08em] text-ink/50">Revoked</p>
 </div>
 <div>
@@ -127,22 +127,8 @@ tailwind.config = {
 </div>
 <a class="nav-link font-sans text-[11px] uppercase tracking-[0.08em] text-seal" href="university-archive.html">Full archive</a>
 </div>
-<ul class="space-y-2">
-<li class="flex flex-col gap-1 rounded-[6px] py-4 transition-colors hover:bg-paper/70 sm:flex-row sm:items-baseline sm:justify-between sm:px-3">
-<span class="font-mono text-[13px] text-ink/55">Qmx…9p21</span>
-<span class="text-[15px] text-ink/85">B.Tech Honors · Arjun Mehra</span>
-<span class="font-mono text-[11px] uppercase tracking-tight text-[#2A7A5A]">Verified</span>
-</li>
-<li class="flex flex-col gap-1 rounded-[6px] py-4 transition-colors hover:bg-paper/70 sm:flex-row sm:items-baseline sm:justify-between sm:px-3">
-<span class="font-mono text-[13px] text-ink/55">Qmz…5r42</span>
-<span class="text-[15px] text-ink/85">M.Tech AI · Sarah D'Souza</span>
-<span class="font-mono text-[11px] uppercase tracking-tight text-[#2A7A5A]">Verified</span>
-</li>
-<li class="flex flex-col gap-1 rounded-[6px] py-4 transition-colors hover:bg-paper/70 sm:flex-row sm:items-baseline sm:justify-between sm:px-3">
-<span class="font-mono text-[13px] text-ink/55">Qmx…4k02</span>
-<span class="text-[15px] text-ink/85">MBA Systems · Riya Verma</span>
-<span class="font-mono text-[11px] uppercase tracking-tight text-[#8A6A20]">Pending</span>
-</li>
+<ul id="recent-anchors" class="space-y-2">
+<li class="py-4 text-ink/40 font-mono text-sm">Loading anchors…</li>
 </ul>
 </section>
 

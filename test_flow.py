@@ -19,12 +19,12 @@ BASE    = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}
 AUTH    = {"Authorization": "Bearer dev-key"}
 
-BATCH_ID = "TEST-BATCH-003"
+BATCH_ID = "TEST-BATCH-010"
 
 STUDENTS = [
     {
         "batch_id":        BATCH_ID,
-        "student_did":     "2023800007",
+        "student_did":     "2023800017",
         "student_name":    "Nitin Verma",
         "student_email":   "nitin@spit.ac.in",
         "university_name": "SPIT",
@@ -35,7 +35,7 @@ STUDENTS = [
     },
     {
         "batch_id":        BATCH_ID,
-        "student_did":     "2023800008",
+        "student_did":     "2023800018",
         "student_name":    "Piysh Chawla",
         "student_email":   "Piyus@spit.ac.in",
         "university_name": "SPIT",
@@ -46,7 +46,7 @@ STUDENTS = [
     },
     {
         "batch_id":        BATCH_ID,
-        "student_did":     "2023800009",
+        "student_did":     "2023800019",
         "student_name":    "Samay Khan",
         "student_email":   "Samay@spit.ac.in",
         "university_name": "SPIT",
