@@ -1276,10 +1276,10 @@ def get_student_qrs(student_did: str):
             "verified_at": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')
         }
 
-        # Generate QR with the status JSON string
-        json_str = json.dumps(final_status_json, separators=(',', ':'))
+        # QR payload must be a direct URL for scanner redirect.
+        qr_payload = redirect_url
         qr = qrcode.QRCode(box_size=10, border=4)
-        qr.add_data(json_str)
+        qr.add_data(qr_payload)
         qr.make(fit=True)
         
         buf = io.BytesIO()
@@ -1289,6 +1289,7 @@ def get_student_qrs(student_did: str):
         qr_results.append({
             "batch_id": batch_id,
             "status_baked_in": final_status_json,
+            "qr_payload": qr_payload,
             "qr_code_base64": f"data:image/png;base64,{img_str}"
         })
 
