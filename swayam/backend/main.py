@@ -50,7 +50,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+try:
+    # web3.py <= 6
+    from web3.middleware import geth_poa_middleware as poa_middleware
+except ImportError:
+    # web3.py >= 7
+    from web3.middleware import ExtraDataToPOAMiddleware as poa_middleware
 
 import requests
 from dotenv import load_dotenv
@@ -149,9 +154,19 @@ app = FastAPI(
     version="3.1.0",
 )
 
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+allowed_origins = [
+    frontend_url,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://your-deployed-frontend.com"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -178,7 +193,7 @@ UNIVERSITY_ADDRESS     = os.getenv("UNIVERSITY_ADDRESS")
 CONTRACT_ADDRESS       = os.getenv("CONTRACT_ADDRESS")
 
 w3 = Web3(Web3.HTTPProvider(HARDHAT_NODE_URL))
-w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+w3.middleware_onion.inject(poa_middleware, layer=0)
 
 _abi_path = os.path.join(os.path.dirname(__file__), "contract_abi.json")
 if os.path.exists(_abi_path):
@@ -275,6 +290,7 @@ def pin_to_cluster(data: dict, name: str = "credential") -> Optional[str]:
             },
             timeout=30,
         )
+                # web3.py <= 6
         response.raise_for_status()
 
         lines = [l.strip() for l in response.text.splitlines() if l.strip()]
@@ -350,6 +366,14 @@ def get_cluster_peer_id() -> Optional[str]:
 def hex_to_bytes32(hex_str: str) -> bytes:
     return bytes.fromhex(hex_str)
 
+def contract_code_present(address: str) -> bool:
+    """Return True only when bytecode exists at the configured contract address."""
+    try:
+        checksum = Web3.to_checksum_address(address)
+        return len(w3.eth.get_code(checksum)) > 0
+    except Exception:
+        return False
+
 
 def get_student_pointers_from_blockchain(student_did: str) -> list[tuple]:
     """
@@ -362,6 +386,8 @@ def get_student_pointers_from_blockchain(student_did: str) -> list[tuple]:
     """
     if not contract:
         return []
+    if not contract_code_present(CONTRACT_ADDRESS):
+        print(f"Contract bytecode not found at {CONTRACT_ADDRESS}")
     try:
         result = contract.functions.getStudentCredentials(student_did).call()
         print(f"DEBUG getStudentCredentials raw: {result}")
@@ -427,6 +453,35 @@ def credential_hash_from_data(credential_data: dict) -> str:
     return MerkleTree.sha256_leaf(json.dumps(bare, sort_keys=True)).hex()
 
 
+def canonicalize_did(student_did: str) -> str:
+    """Normalize student DID to reduce case/whitespace mismatch issues."""
+    did = (student_did or "").strip()
+    if not did:
+        return did
+
+    # Canonicalize did:ethr identifiers by lower-casing the address part only.
+    parts = did.split(":")
+    if len(parts) >= 3 and parts[0].lower() == "did" and parts[1].lower() == "ethr":
+        parts[0] = "did"
+        parts[1] = "ethr"
+        parts[-1] = parts[-1].lower()
+        return ":".join(parts)
+
+    return did
+
+
+def did_lookup_candidates(student_did: str) -> list[str]:
+    """Generate lookup candidates to handle historical non-canonical storage."""
+    raw = (student_did or "").strip()
+    canonical = canonicalize_did(raw)
+
+    candidates = []
+    for value in (raw, canonical, raw.lower()):
+        if value and value not in candidates:
+            candidates.append(value)
+    return candidates
+
+
 # =============================================================================
 # SECTION 8: API ROUTES
 # =============================================================================
@@ -435,6 +490,7 @@ def credential_hash_from_data(credential_data: dict) -> str:
 @app.get("/health")
 def health_check():
     blockchain_ok = w3.is_connected()
+    contract_deployed = contract_code_present(CONTRACT_ADDRESS) if CONTRACT_ADDRESS else False
 
     cluster_ok    = False
     cluster_peers = []
@@ -469,6 +525,7 @@ def health_check():
                 "url":       HARDHAT_NODE_URL,
                 "chain_id":  w3.eth.chain_id if blockchain_ok else None,
                 "contract":  CONTRACT_ADDRESS or "NOT DEPLOYED",
+                "contract_deployed": contract_deployed,
             },
             "ipfs_cluster": {
                 "reachable":  cluster_ok,
@@ -497,13 +554,15 @@ def add_to_batch(request: AddToBatchRequest):
     # issuanceDate is set here so it is locked in before commit.
     # It reflects when the university prepared the credential, not when
     # the blockchain transaction was mined.
+    student_did = canonicalize_did(request.student_did)
+
     credential_data = {
         "@context":  ["https://www.w3.org/2018/credentials/v1"],
         "type":      ["VerifiableCredential", "UniversityDegreeCredential"],
         "issuer":    {"id": f"did:ethr:{UNIVERSITY_ADDRESS}", "name": request.university_name},
         "issuanceDate": datetime.now(timezone.utc).isoformat(),
         "credentialSubject": {
-            "id":             request.student_did,
+            "id":             student_did,
             "studentName":    request.student_name,
             "studentEmail":   request.student_email,
             "universityName": request.university_name,
@@ -517,13 +576,21 @@ def add_to_batch(request: AddToBatchRequest):
     # Pin bare credential (no proof yet). This CID is temporary — the enriched
     # CID produced at commit time is what ends up on-chain.
     bare_cid = pin_to_cluster(credential_data, name=f"bare-{request.batch_id}")
+    if not bare_cid:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "IPFS Cluster is unreachable. Start docker services (ipfs0/ipfs1/cluster0/cluster1) "
+                f"or fix CLUSTER_API_URL ({CLUSTER_API_URL}) before staging credentials."
+            ),
+        )
 
     if request.batch_id not in pending_batches:
         pending_batches[request.batch_id] = {"credentials": []}
 
     pending_batches[request.batch_id]["credentials"].append({
         "credential_data": credential_data,
-        "student_did":     request.student_did,
+        "student_did":     student_did,
         "bare_cid":        bare_cid or "",
     })
 
@@ -563,6 +630,14 @@ def commit_batch(request: CommitBatchRequest):
     credentials = pending_batches[batch_id]["credentials"]
     if not credentials:
         raise HTTPException(status_code=400, detail="Batch is empty")
+    if len(credentials) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Batch must contain at least 2 credentials to generate non-empty Merkle proofs. "
+                "Stage more credentials and retry commit."
+            ),
+        )
 
     # --- 1. Build Merkle tree from BARE credentials --------------------------
     # INVARIANT: leaf = sha256(json.dumps(bare_credential, sort_keys=True))
@@ -617,6 +692,15 @@ def commit_batch(request: CommitBatchRequest):
     tx_hash_str = None
     if contract and UNIVERSITY_PRIVATE_KEY:
         try:
+            if not contract_code_present(CONTRACT_ADDRESS):
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        f"Contract not deployed at {CONTRACT_ADDRESS}. "
+                        "Deploy the contract and update CONTRACT_ADDRESS before committing."
+                    ),
+                )
+
             checksum_address = Web3.to_checksum_address(UNIVERSITY_ADDRESS)
             nonce            = w3.eth.get_transaction_count(checksum_address)
 
@@ -632,6 +716,7 @@ def commit_batch(request: CommitBatchRequest):
             try:
                 estimated_gas = commit_fn.estimate_gas({"from": checksum_address})
                 gas_limit     = int(estimated_gas * 1.25)
+
                 print(f"Gas estimate: {estimated_gas:,} -> limit: {gas_limit:,}")
             except Exception as est_err:
                 raise HTTPException(
@@ -779,7 +864,12 @@ def get_student_credentials(student_did: str):
     This is fully stateless — no in-memory cache is needed because the proof
     is embedded in the IPFS object stored at commit time.
     """
-    pointers = get_student_pointers_from_blockchain(student_did)
+    pointers = []
+    for candidate_did in did_lookup_candidates(student_did):
+        pointers = get_student_pointers_from_blockchain(candidate_did)
+        if pointers:
+            student_did = candidate_did
+            break
 
     credentials_list = []
     for (batch_id, leaf_index, enriched_cid) in pointers:
@@ -1167,20 +1257,29 @@ def get_student_qrs(student_did: str):
         except Exception:
             is_valid, is_revoked = False, False
 
+        verification_result = bool(is_valid and not is_revoked)
+        redirect_url = (
+            "https://suyognikam693.github.io/verify/"
+            if verification_result
+            else "https://suyognikam693.github.io/failed/"
+        )
+
         # --- THE DATA IN THE QR ---
-        # This is exactly what the scanner will display
+        # Encodes both the boolean result and the destination URL.
         final_status_json = {
+            "result": verification_result,
             "is_valid": is_valid,
             "is_revoked": is_revoked,
+            "redirect_url": redirect_url,
             "uid": student_did,
             "batch": batch_id,
             "verified_at": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')
         }
 
-        # Generate QR with the status JSON string
-        json_str = json.dumps(final_status_json, separators=(',', ':'))
+        # QR payload must be a direct URL for scanner redirect.
+        qr_payload = redirect_url
         qr = qrcode.QRCode(box_size=10, border=4)
-        qr.add_data(json_str)
+        qr.add_data(qr_payload)
         qr.make(fit=True)
         
         buf = io.BytesIO()
@@ -1190,6 +1289,7 @@ def get_student_qrs(student_did: str):
         qr_results.append({
             "batch_id": batch_id,
             "status_baked_in": final_status_json,
+            "qr_payload": qr_payload,
             "qr_code_base64": f"data:image/png;base64,{img_str}"
         })
 

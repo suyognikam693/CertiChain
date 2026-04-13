@@ -1,14 +1,18 @@
+.env
+.venv
+venv
+
 frontend/package.json
 frontend/package-lock.json
 frontend/node_modules/
 
-.venv
-<<<<<<< HEAD
-venv
-=======
+blkchain/__pycache__
+blkchain/blockchain/node_modules
+blkchain/docker/blockchain/node_modules
+backend/.env
+
 swayam/__pycache__
 swayam/backend/.env
 swayam/blockchain/.env
 swayam/blockchain/node_modules
 swayam/docker/blockchain/node_modules
->>>>>>> 93f6655 (badabingbadaboom)

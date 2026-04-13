@@ -66,7 +66,17 @@ function formatDate(iso) {
     year: "numeric", month: "long", day: "numeric",
   });
 }
-
+function initScrollReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.18 });
+  $$(`.fade-slide-up`).forEach(el => observer.observe(el));
+}
 // ─── BOOT ────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -139,6 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "employer.html":          initEmployerVerify,
   };
   if (routes[page]) routes[page]();
+  initScrollReveal();
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
