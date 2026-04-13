@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { revokeCredential } from '../api/client';
 
 const stripHexPrefix = (value = '') => value.replace(/^0x/i, '').trim();
@@ -8,12 +8,20 @@ const UniversityRevoke = () => {
   const [form, setForm] = useState({ batch_id: '', credential_hash: '' });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const getToken = () => localStorage.getItem('cc_token') || 'dev-key';
+  const getToken = () => localStorage.getItem('cc_token');
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!form.batch_id || !form.credential_hash) {
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      navigate('/university-login', { replace: true });
       return;
     }
 
@@ -25,7 +33,7 @@ const UniversityRevoke = () => {
           batch_id: form.batch_id,
           credential_hash: stripHexPrefix(form.credential_hash),
         },
-        getToken()
+        token
       );
       setResult({ ok: true, data: response });
     } catch (error) {
@@ -40,7 +48,7 @@ const UniversityRevoke = () => {
       {/* Header/Footer are left embedded to match EXACT structure */}
       <header className="relative fixed left-0 right-0 top-0 z-50 flex min-h-[72px] w-full items-center border-b border-mist/50 bg-slate-900/40 px-6 backdrop-blur-[12px] md:px-8 dark:border-white/10 dark:bg-emerald-600/80">
 <div className="flex min-w-0 flex-1 items-center gap-3">
-<button type="button" className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-[6px] border border-mist/80 text-ink transition-colors hover:bg-surface-container-low icon-btn border-white/20 dark:text-white" data-mobile-nav-toggle="" aria-controls="uni-revoke-nav-drawer" aria-expanded="false" aria-label="Open menu">
+<button type="button" onClick={() => setDrawerOpen(!drawerOpen)} className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-[6px] border border-mist/80 text-ink transition-colors hover:bg-surface-container-low icon-btn border-white/20 dark:text-white" aria-controls="uni-revoke-nav-drawer" aria-expanded={drawerOpen} aria-label="Open menu">
 <span className="material-symbols-outlined text-[22px]">menu</span>
 </button>
 <Link className="nav-link shrink-0 font-serif text-2xl italic text-ink dark:text-white" to="/index">CertiChain</Link>
@@ -54,7 +62,7 @@ const UniversityRevoke = () => {
 </nav>
 <div className="flex min-w-0 flex-1 justify-end"></div>
 </header>
-<nav id="uni-revoke-nav-drawer" className="mobile-drawer fixed left-0 right-0 top-[72px] z-40 flex flex-col gap-4 border-b border-mist/50 bg-paper/95 px-6 py-6 shadow-[0_1px_3px_rgba(15,15,15,0.06)] backdrop-blur-[12px] md:hidden" data-mobile-drawer="" data-open="false" aria-label="Site">
+<nav id="uni-revoke-nav-drawer" className="mobile-drawer fixed left-0 right-0 top-[72px] z-40 flex flex-col gap-4 border-b border-mist/50 bg-paper/95 px-6 py-6 shadow-[0_1px_3px_rgba(15,15,15,0.06)] backdrop-blur-[12px] md:hidden" data-open={drawerOpen} aria-label="Site">
 <Link className="border-b border-mist/40 py-2 font-serif text-lg text-seal" to="/university">Universities</Link>
 <Link className="border-b border-mist/40 py-2 font-serif text-lg" to="/student/login">Students</Link>
 <Link className="border-b border-mist/40 py-2 font-serif text-lg" to="/employer">Verify</Link>

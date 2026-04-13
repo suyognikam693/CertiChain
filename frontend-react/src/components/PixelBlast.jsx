@@ -329,6 +329,26 @@ const PixelBlast = ({
   const visibilityRef = useRef({ visible: true });
   const speedRef = useRef(speed);
 
+  useEffect(() => {
+    if (!autoPauseOffscreen) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { visibilityRef.current.visible = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    observer.observe(container);
+    const onVisibilityChange = () => {
+      if (document.hidden) visibilityRef.current.visible = false;
+      else visibilityRef.current.visible = true;
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [autoPauseOffscreen]);
+
   const threeRef = useRef(null);
   const prevConfigRef = useRef(null);
   useEffect(() => {
@@ -551,7 +571,7 @@ const PixelBlast = ({
       if (transparent) t.renderer.setClearAlpha(0);
       else t.renderer.setClearColor(0x000000, 1);
       if (t.liquidEffect) {
-        const uStrength = t.liquidEffect;
+        const uStrength = t.liquidEffect.uniforms.get('uStrength');
         if (uStrength) uStrength.value = liquidStrength;
         const uFreq = t.liquidEffect.uniforms.get('uFreq');
         if (uFreq) uFreq.value = liquidWobbleSpeed;

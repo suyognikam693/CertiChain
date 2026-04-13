@@ -28,7 +28,7 @@ const University = () => {
       {/*  Site header (matches student / employer)  */}
 <header className="relative fixed left-0 right-0 top-0 z-50 flex min-h-[72px] w-full items-center border-b border-mist/50 bg-slate-900/40 px-6 backdrop-blur-[12px] md:px-8 dark:border-white/10 dark:bg-emerald-600/80">
 <div className="flex min-w-0 flex-1 items-center gap-3">
-<button type="button" className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-[6px] border border-mist/80 text-ink transition-colors hover:bg-surface-container-low icon-btn border-white/20 dark:text-white" data-mobile-nav-toggle="" aria-controls="university-nav-drawer" aria-expanded="false" aria-label="Open menu">
+<button type="button" onClick={() => setDrawerOpen(!drawerOpen)} className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-[6px] border border-mist/80 text-ink transition-colors hover:bg-surface-container-low icon-btn border-white/20 dark:text-white" aria-controls="university-nav-drawer" aria-expanded={drawerOpen} aria-label="Open menu">
 <span className="material-symbols-outlined text-[22px]">menu</span>
 </button>
 <Link className="nav-link shrink-0 font-serif text-2xl italic text-ink dark:text-white" to="/index">CertiChain</Link>
@@ -42,7 +42,7 @@ const University = () => {
 </nav>
 <div className="flex min-w-0 flex-1 justify-end"></div>
 </header>
-<nav id="university-nav-drawer" className="mobile-drawer fixed left-0 right-0 top-[72px] z-40 flex flex-col gap-4 border-b border-mist/50 bg-paper/95 px-6 py-6 shadow-[0_1px_3px_rgba(15,15,15,0.06)] backdrop-blur-[12px] md:hidden" data-mobile-drawer="" data-open="false" aria-label="Site">
+<nav id="university-nav-drawer" className="mobile-drawer fixed left-0 right-0 top-[72px] z-40 flex flex-col gap-4 border-b border-mist/50 bg-paper/95 px-6 py-6 shadow-[0_1px_3px_rgba(15,15,15,0.06)] backdrop-blur-[12px] md:hidden" data-open={drawerOpen} aria-label="Site">
 <Link className="border-b border-mist/40 py-2 font-serif text-lg text-seal" to="/university">Universities</Link>
 <Link className="border-b border-mist/40 py-2 font-serif text-lg" to="/student/login">Students</Link>
 <Link className="border-b border-mist/40 py-2 font-serif text-lg" to="/employer">Verify</Link>

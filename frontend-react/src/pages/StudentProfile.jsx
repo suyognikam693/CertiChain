@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getStudentCredentials, getIPFSData, getStudentQRCodes } from '../api/client';
-import { GraduationCap, ShieldCheck, Link, RefreshCw, AlertTriangle } from 'lucide-react';
+import { GraduationCap, ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 // Web Crypto API helper for SHA-256
@@ -38,8 +38,9 @@ const StudentProfile = () => {
             const canonicalString = JSON.stringify(ipfsData, Object.keys(ipfsData).sort());
             const localHash = await sha256(canonicalString);
             
-            // In a real system, we'd compare localHash with the contract/tuple hash
-            const isVerifiedLocally = true; // We flag as verified simply by reaching here
+            // Compare hashes normalized to lowercase without '0x' prefix
+            const normalizeHash = (h = '') => h.replace(/^0x/i, '').toLowerCase();
+            const isVerifiedLocally = normalizeHash(localHash) === normalizeHash(tuple.credential_hash);
 
             return {
               ...tuple,

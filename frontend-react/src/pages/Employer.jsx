@@ -29,7 +29,7 @@ const Employer = () => {
         if (hasAutoVerifyPayload) {
             handleVerify();
         }
-    }, []);
+    }, [location.search]);
 
   const handleVerify = async () => {
         if (!hashInput || !batchId) {

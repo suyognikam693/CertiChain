@@ -106,17 +106,17 @@ const VerifierHub = () => {
       </div>
 
       {result && (
-        <div className={`card border-l-4 ${result.verified ? 'border-emerald-500' : 'border-error'}`}>
+        <div className={`card border-l-4 ${result.is_valid ? 'border-emerald-500' : 'border-error'}`}>
           <div className="flex items-center gap-3 mb-4">
             {result.error ? (
                <ShieldAlert className="text-error" size={28} />
-            ) : result.verified ? (
+            ) : result.is_valid ? (
                <CheckCircle className="text-emerald" size={28} />
             ) : (
                <XCircle className="text-error" size={28} />
             )}
             <h3 className="font-serif text-2xl">
-               {result.error ? 'Verification Error' : (result.verified ? 'Cryptographically Valid' : 'Invalid Proof')}
+               {result.error ? 'Verification Error' : (result.is_valid ? 'Cryptographically Valid' : 'Invalid Proof')}
             </h3>
           </div>
           
