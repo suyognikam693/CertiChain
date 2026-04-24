@@ -144,7 +144,7 @@ const Student = () => {
 {/*  Header Section  */}
 <header className="mb-12">
 <h1 className="font-serif text-[40px] leading-[1.1] tracking-tight mb-2">Credentials Vault</h1>
-<p className="text-on-surface-variant font-sans text-base opacity-80">12 verified assets · Cryptographically secured</p>
+<p className="text-on-surface-variant font-sans text-base opacity-80">{credentials.length} verified assets · Cryptographically secured</p>
 </header>
 {/*  Wallet Bar  */}
 <div className="bg-surface-container-low border border-mist/50 px-4 py-2 rounded-lg flex items-center justify-between mb-12">
@@ -164,7 +164,7 @@ const Student = () => {
   ) : credentials.length === 0 ? (
      <div className="col-span-3 py-20 text-center text-slate-500 font-mono text-sm">No credentials found in vault.<br/><span className="text-[11px] opacity-60">Ask your university to upload your credential CSV.</span></div>
   ) : credentials.map((cred, i) => (
-     <div key={i} onClick={() => setSelectedCred(cred)} className="interactive-surface cursor-pointer bg-slate-800 border border-emerald-500/50 border-l-2 border-l-emerald-500 p-6 rounded-[6px] hover:border-emerald-500 flex flex-col justify-between min-h-[280px] shadow-[0_1px_3px_rgba(15,15,15,0.04)]">
+     <div key={i} onClick={() => setSelectedCred(cred)} className="interactive-surface cursor-pointer relative bg-slate-800 border border-emerald-500/50 border-l-2 border-l-emerald-500 p-6 rounded-[6px] hover:border-emerald-500 flex flex-col justify-between min-h-[280px] shadow-[0_1px_3px_rgba(15,15,15,0.04)]">
        <div>
          <div className="flex justify-between items-start mb-6">
            <span className="font-sans font-medium uppercase text-[11px] tracking-[0.08em] text-slate-400">{cred.university_name || 'University'}</span>

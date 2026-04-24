@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { addBatchCredential, commitBatch, getBatchStatus, getShareLink, revokeCredential } from '../api/client';
+import { addBatchCredential, commitBatch, getBatchStatus } from '../api/client';
 import { PlusCircle, Search, Save, AlertCircle, FileText } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -26,12 +26,13 @@ const AdminDashboard = () => {
   const handleStageCredential = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('cc_token');
       const payload = {
         batch_id: activeBatchId,
         ...formData,
       };
       // Sends to backend to add to in-memory batch managed by backend
-      await addBatchCredential(payload);
+      await addBatchCredential(payload, token);
       
       // Update local UI state
       setStagedCredentials([...stagedCredentials, payload]);
@@ -55,7 +56,8 @@ const AdminDashboard = () => {
     }
     try {
       setCommitStatus('committing');
-      const result = await commitBatch();
+      const token = localStorage.getItem('cc_token');
+      const result = await commitBatch(activeBatchId, token);
       setCommitStatus('success');
       setStagedCredentials([]); // Backend clears its memory too
       
