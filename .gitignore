@@ -1,18 +1,54 @@
+# Environment and secrets
 .env
-.venv
-venv
+.env.local
+.env.*.local
+system/backend/.env
+system/blockchain/.env
+frontend/.env.local
+!.env.example
+!**/.env.example
 
-frontend/package.json
-frontend/package-lock.json
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+system/backend/.venv/
+
+# Node
+node_modules/
 frontend/node_modules/
+system/blockchain/node_modules/
+system/docker/blockchain/node_modules/
 
-blkchain/__pycache__
-blkchain/blockchain/node_modules
-blkchain/docker/blockchain/node_modules
-backend/.env
+# Build output
+dist/
+build/
+frontend/dist/
+system/blockchain/artifacts/
+system/blockchain/cache/
 
-swayam/__pycache__
-swayam/backend/.env
-swayam/blockchain/.env
-swayam/blockchain/node_modules
-swayam/docker/blockchain/node_modules
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE and OS files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
