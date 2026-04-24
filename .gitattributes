@@ -1,0 +1,2 @@
+# Docker/Linux entrypoints must use LF (CRLF breaks /bin/sh in containers).
+blkchain/docker/**/*.sh text eol=lf

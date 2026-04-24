@@ -1,4 +1,57 @@
+# Environment and secrets
 .env
+.env.local
+.env.*.local
+system/backend/.env
+system/blockchain/.env
+frontend/.env.local
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+system/backend/.venv/
+
+# Node
+node_modules/
+frontend/node_modules/
+system/blockchain/node_modules/
+system/docker/blockchain/node_modules/
+
+# Build output
+dist/
+build/
+frontend/dist/
+system/blockchain/artifacts/
+system/blockchain/cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE and OS files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 .venv
 node_modules/
 frontend/node_modules/

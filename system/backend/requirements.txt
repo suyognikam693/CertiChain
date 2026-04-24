@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+web3
+requests
+python-dotenv
+pydantic
+qrcode[pil]
+python-multipart
