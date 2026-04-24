@@ -52,3 +52,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+.venv
+node_modules/
+frontend/node_modules/
+frontend-react/node_modules/
